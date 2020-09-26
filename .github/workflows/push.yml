@@ -1,0 +1,47 @@
+# .github/workflows/push.yml
+# Push to npm everytime we push to the source GitHub repo
+
+## name of our action
+name: Release
+
+# the event that will trigger the action
+on:
+  push:
+    branches: [master]
+
+# what the action will do, list of jobs to do
+jobs:
+  release:
+    # the operating system it will run on
+    runs-on: ubuntu-latest
+    # this check needs to be in place to prevent a publish loop with auto and github actions, ignored the request with commit message indicate skipping the ci/cd process
+    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    # the list of steps that the action will go through, each jobs is required to declare it
+    steps:
+      - uses: actions/checkout@v2 # checkout the latest version
+      - name: Prepare repository # Declare the step name
+        run: git fetch --unshallow --tags
+      - name: Use Node.js 12.x
+        # Declares dependency on Node v12
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Cache node modules
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          # Create a key for identifying the correct node_modules data for reuse
+          key: yarn-deps-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-deps-${{ hashFiles('yarn.lock') }}
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # Use run when create a step without uses (dependency)
+        run: |
+          yarn install --frozen-lockfile # ignore lock file
+          yarn build
+          yarn release
