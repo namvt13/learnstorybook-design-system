@@ -19,3 +19,18 @@ jobs:
               with:
                   projectToken: project-token
                   token: #{{ secrets.GITHUB_TOKEN }}
+
+    test2:
+        # the operating system it will run on
+        runs-on: ubuntu-latest
+        # the list of steps that the action will go through
+        steps:
+            - uses: actions/checkout@1
+            - run: yarn
+            - run: yarn test # adds the test command
+            - uses: chromaui/action@1 # push to chromaui
+              # options required to the GitHub chromatic action
+              with:
+                  # our project token
+                  projectToken: project-token
+                  token: ${{ secrets.GITHUB_TOKEN }}
